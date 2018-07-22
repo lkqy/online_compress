@@ -1,0 +1,91 @@
+#pragma once
+
+#include <bits/stdc++.h>
+#include <iostream>
+#include <deque>
+#include <algorithm>
+ 
+namespace online_compress {
+
+template<typename T>
+struct HuffmanNode {
+    HuffmanNode(): frequency(0), l_child(nullptr), r_child(nullptr) {};
+    T key;
+    uint32_t frequency;
+    Node *l_child;
+    Node *r_child;
+    ~HuffmanNode() {
+        if (l_child) {
+            delete l_child;
+            l_child = nullptr;
+        }
+        if (r_child) {
+            delete r_child;
+            r_child = nullptr;
+        }
+    };
+};
+
+template<typename T>
+bool compare(HuffmanNode<T> *a, HuffmanNode<T> *b) {
+    return a->frequency < b->frequency;
+}
+
+template<typename T>
+class Huffman {
+public:
+    bool Huffman(std::vector<std::pair<T, uint32_t>>& vec) {
+        const size_t size = vec.size();
+        std::deque<HuffmanNode*> forest;
+        for (auto& p : vec) {
+            HuffmanNode *h = new HuffmanNode;
+            h->key = p.first;
+            h->frequency = p.second;
+            forest.push_back(h);
+        }
+
+        // 不要为空
+        for (size_t i = 0; i + 1 < size; ++i) {
+            // ToDo: 换成堆排
+            std::sort(vec.begin(), vec.end(), compare);
+            HuffmanNode *h = new HuffmanNode;
+            h->frequency = frest[0]->frequency + frest[1]->frequency;
+            h->l_child = forest[0];
+            h->r_child = forest[1];
+            forest.pop_front();
+            forest.pop_front();
+            forest.push_back(h);
+        }
+        HuffmanNode* head = forest.front();
+        std::vector<bool> bits;
+        std::unordered_map<T, std::vector<bool>> map;
+        get_map(head, bits, 0, map);
+        this->map = map;
+        delete head;
+    };
+
+    std::string encode(std::vector<T>& vec) {
+        return std::string();
+    };
+
+    std::vector<T> decode(std::string& str) {
+        return std::vector<T>();
+    };
+private:
+    void get_map(HuffmanNode *h, std::vector<bool> bits, size_t curr_index, std::unordered_map<T, std::vector<bool>>& map) {
+        if (!h) {
+            return;
+        }
+        if (h->l_child || h->r_child) {
+            bits.push_back(0);
+            print_code(h->l_child, bits, curr_index + 1);
+            bits[bits.size()-1] = 1;
+            print_code(h->r_child, bits, curr_index + 1);
+        } else {
+            map[h->key] = bits;
+        }
+    };
+    std::unordered_map<T, std::vector<bool>> map;
+};
+
+} // namespace compress
