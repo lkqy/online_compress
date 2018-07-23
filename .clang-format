@@ -1,0 +1,22 @@
+BasedOnStyle: Google
+AccessModifierOffset: -3
+IndentWidth: 4
+ColumnLimit: 100
+IndentCaseLabels: false
+IncludeCategories: 
+  - Regex:           '^<boost.*'
+    Priority:        27
+  - Regex:           '^<.*\/'
+    Priority:        29
+  - Regex:           '^<.*\.hpp>'
+    Priority:        13
+  - Regex:           '^<.*\.h>'
+    Priority:        12
+  - Regex:           '^<.*'
+    Priority:        11
+  - Regex:           '"framework.*'
+    Priority:        37
+  - Regex:           '.*'
+    Priority:        39
+DerivePointerAlignment: false
+#AllowShortFunctionsOnASingleLine: None

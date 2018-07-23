@@ -8,19 +8,21 @@
 #include "utils/encoder.h"
 
 
-TEST(OnlineCompressEncoder, TestLzwNormalUse) {
-    online_compress::LzwEncoder lzw;
+TEST(OnlineCompressEncoder, TestLzwBatchNormalUse) {
+    online_compress::LzwBatchEncoder lzw(0);
     {
-        std::vector<std::string> data = {"abcabcabcabcabcabcabc"};
-        auto map = lzw.build_dict(data);
+        std::string data = "abcabcabcabcabcabcabc";
+        std::unordered_map<std::string, uint64_t> map;
+        lzw.add(data, map);
         for(auto it : map) {
             std::cout<<it.first<<" "<<it.second<<"\n";
         }
     }
     {
         std::cout<<"\n\n";
-        std::vector<std::string> data = {"aaaaaa"};
-        auto map = lzw.build_dict(data);
+        std::string data = "aaaaaa";
+        std::unordered_map<std::string, uint64_t> map;
+        lzw.add(data, map);
         for(auto it : map) {
             std::cout<<it.first<<" "<<it.second<<"\n";
         }

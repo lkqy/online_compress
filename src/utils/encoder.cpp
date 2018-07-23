@@ -3,45 +3,26 @@
 
 namespace online_compress {
 
-std::unordered_map<std::string, uint64_t> LzwEncoder::build_dict(
-    const std::vector<std::string>& datas) {
-    std::ostringstream oss;
-    for (auto& s : datas) {
-        oss << s;
-    }
-    std::string data = oss.str();
-    std::unordered_map<std::string, uint64_t> map;
+bool LzwBatchEncoder::add(const std::string& line,
+                          std::unordered_map<std::string, uint64_t>& result) {
     std::string p;
-    for (auto c : data) {
+    for (auto c : line) {
         std::string n = p + c;
-        if (map.find(n) != map.end()) {
-            map[n] += 1;
-            p = n;
-        } else {
-            map[n] = 1;
-            p = c;
+        typename tbb::concurrent_hash_map<std::string, MyAtomic<size_t>>::accessor a;
+        if (map.find(a, n)) {
+            a->second.inr(1);
+        } else if (map.insert(a, n)) {
+            //    a->second = 1;
         }
     }
-    return map;
-}
-
-std::unordered_map<std::string, uint64_t> LzwBatchEncoder::build_dict(
-    const std::vector<std::string>& datas) {
-    std::unordered_map<std::string, uint64_t> map;
-    for (auto& data : datas) {
-        std::string p;
-        for (auto c : data) {
-            std::string n = p + c;
-            if (map.find(n) != map.end()) {
-                map[n] += 1;
-                p = n;
-            } else {
-                map[n] = 1;
-                p = c;
-            }
+    if (map.size() > cappacity) {
+        for (auto it = map.begin(); it != map.end(); ++it) {
+            result[it->first] = it->second.load();
         }
+        map.clear();
+        return true;
     }
-    return map;
+    return false;
 }
 
 }  // namespace online_compress

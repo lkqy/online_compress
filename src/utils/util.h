@@ -1,6 +1,7 @@
 #pragma once
 
 #include <algorithm>
+#include <atomic>
 #include <unordered_map>
 #include <vector>
 
@@ -48,5 +49,15 @@ std::vector<std::pair<T, H>> partial_sort_unordered_map_by_value_desc(
                       [&](PAIR& i, PAIR& j) { return i.second >= j.second; });
     return pairs;
 }
+
+// 解决atomic不能复制的问题
+template <typename T>
+struct MyAtomic {
+    MyAtomic() : v(T()){};
+    MyAtomic(const MyAtomic<T>& m) : v(m.v.load()){};
+    void inr(T t) { v += t; };
+    T load() { return v.load(std::memory_order_relaxed); };
+    std::atomic<T> v;
+};
 
 }  // namespace online_compress

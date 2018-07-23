@@ -31,12 +31,8 @@ std::vector<std::string> get_top_usefull_string(std::unordered_map<std::string, 
     return result;
 }
 
-Map::Map(EncoderPtr& _encoder_ptr, uint64_t _max_capacity, uint64_t _max_cache_size,
-         uint64_t _min_occrence)
-    : encoder_ptr(_encoder_ptr),
-      max_capacity(_max_capacity),
-      max_cache_size(_max_cache_size),
-      min_occrence(_min_occrence) {
+Map::Map(EncoderPtr& _encoder_ptr, uint64_t _max_capacity, uint64_t _min_occrence)
+    : encoder_ptr(_encoder_ptr), max_capacity(_max_capacity), min_occrence(_min_occrence) {
     // 从256开始
     for (uint64_t i = 256; i < max_capacity; ++i) {
         min_heap.push(i);
@@ -48,7 +44,7 @@ std::string Map::compress(const std::string& data, bool enable_add_cache) {
         return std::string();
     }
     if (enable_add_cache) {
-        add_cache(data);
+        update_encode(data);
     }
     std::vector<uint64_t> result = build_index(data);
     //压缩成4字节
@@ -104,12 +100,9 @@ std::string Map::uncompress(const std::string& data) {
     return oss.str();
 }
 
-void Map::add_cache(const std::string& str) {
-    if (cache.size() < max_cache_size) {
-        cache.push_back(str);
-    } else {
-        auto map = encoder_ptr->build_dict(cache);
-        cache.clear();
+void Map::update_encode(const std::string& str) {
+    std::unordered_map<std::string, uint64_t> map;
+    if (encoder_ptr->add(str, map)) {
         // 更新到map cache里
         if (map.size() + dictionary_size() < max_capacity) {
             for (auto& it : map) {
@@ -132,20 +125,30 @@ bool Map::add_dictionary(const std::string& key) {
     if (min_heap.empty() || exists(key)) {
         return false;
     }
-    uint64_t id = min_heap.top();
-    min_heap.pop();
-    dictionary.add(key, id);
-    return true;
+
+    uint64_t id = 0;
+    if (min_heap.try_pop(id)) {
+        if (dictionary.add(key, id)) {
+            return true;
+        } else {
+            min_heap.push(id);
+        }
+    }
+    return false;
 }
 
 bool Map::remove_dictionary(const std::string& key) {
     if (!exists(key)) {
         return false;
     }
-    uint64_t id = dictionary.get_second(key);
-    dictionary.erase_first(key);
-    min_heap.push(id);
-    return true;
+    uint64_t id = 0;
+    if (dictionary.get_second(key, id)) {
+        if (dictionary.erase_first(key)) {
+            min_heap.push(id);
+            return true;
+        }
+    }
+    return false;
 }
 
 }  // namespace online_compress

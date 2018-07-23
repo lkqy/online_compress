@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 #include <stdlib.h>
+#include <tbb/concurrent_priority_queue.h>
 #include "utils/dictionary.h"
 #include "utils/encoder.h"
 
@@ -24,8 +25,7 @@ namespace online_compress {
 class Map {
  public:
     virtual ~Map(){};
-    Map(EncoderPtr& _encoder_ptr, uint64_t _max_capacity, uint64_t _max_cache_size,
-        uint64_t _min_occrence);
+    Map(EncoderPtr& _encoder_ptr, uint64_t _max_capacity, uint64_t _min_occrence);
 
     std::string compress(const std::string& data, bool enable_add_cache);
 
@@ -34,7 +34,7 @@ class Map {
  protected:
     virtual std::vector<uint64_t> build_index(const std::string& data);
 
-    void add_cache(const std::string& str);
+    void update_encode(const std::string& str);
 
     bool add_dictionary(const std::string& key);
 
@@ -46,14 +46,25 @@ class Map {
         if (key.length() == 1) {
             return key[0];
         }
-        return dictionary.get_second(key);
+        uint64_t id = 0;
+        if (dictionary.get_second(key, id)) {
+            return id;
+        }
+        assert(id > 0);
+        // ToDo: 如果读不到id了，会出错
+        return 0;
     };
 
     std::string get_decode_str(uint64_t index) {
         if (index < 256) {
             return std::string(1, index);
         }
-        return dictionary.get_first(index);
+        std::string key;
+        if (dictionary.get_first(index, key)) {
+            return key;
+        }
+        // ToDo: 如果读不到id了，会出错
+        return std::string();
     };
 
     size_t dictionary_size() { return dictionary.size(); };
@@ -63,10 +74,10 @@ class Map {
     uint64_t max_cache_size;
     uint64_t min_occrence;
 
-    std::vector<std::string> cache;
     Dictionary<std::string, uint64_t> dictionary;
 
-    std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>> min_heap;
+    // std::priority_queue<uint64_t, std::vector<uint64_t>, std::greater<uint64_t>> min_heap;
+    tbb::concurrent_priority_queue<uint64_t, std::greater<uint64_t>> min_heap;
 };
 
 }  // namespace online_compress
